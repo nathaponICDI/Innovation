@@ -1,271 +1,101 @@
-# Early-Stage Technology Adoption Diagnostics Using S-Curves and Diffusion Models
+# S-Curve Fitting for Separated and Early-Phase Technology Data
 
-This repository documents a practical framework for assessing whether a technology, platform, protocol, or innovation is still in its early adoption phase.
+This folder contains a notebook lesson for fitting logistic S-curves to separated mock data:
 
-The diagnostic approach presented here is **not a single named method**. Instead, it combines concepts from:
+- [`scurve.ipynb`](./scurve.ipynb)
 
-* Logistic (S-curve) growth modeling
-* Innovation diffusion theory
-* Bass diffusion forecasting
-* Scenario-based saturation analysis for limited early-stage data
+The notebook shows two related workflows:
 
-The objective is to answer questions such as:
+1. Fit one S-curve per segment when the data is split into separated observation windows.
+2. Diagnose whether very early new-technology data is consistent with the early phase of an S-curve.
 
-> Is this technology still early in its adoption lifecycle?
+## Why This Matters
 
-> Has adoption already reached the midpoint of the diffusion curve?
+S-curves are commonly used to describe technology adoption, new-product diffusion, cumulative market penetration, and capacity growth. Early adoption is usually slow, growth accelerates after adoption spreads, and the curve eventually approaches a saturation level.
 
-> How sensitive are conclusions to assumptions about future market size?
+For mature data, it may be possible to estimate the full curve directly. For very early technology data, this is usually not reliable because the data may not yet contain the fast-growth middle or the final plateau.
 
----
+Because of that, the notebook treats early technology fitting as a diagnostic question:
 
-## Conceptual Foundation
+> Is the observed data consistent with being in the early phase of a plausible S-curve?
 
-Technology adoption frequently follows an **S-shaped (sigmoidal) curve**:
+It does not claim that early data can prove the final market size or exact future adoption path.
 
-1. Slow growth during the innovator and early-adopter phase
-2. Rapid growth during mainstream adoption
-3. Saturation as the market approaches its carrying capacity
+## Method Summary
 
-A major challenge is that **early-stage data rarely contains enough information to estimate the final adoption ceiling accurately**.
+The notebook uses a logistic S-curve:
 
-Therefore, instead of fitting a single curve and trusting the estimated saturation level, we:
+```text
+y = baseline + amplitude / (1 + exp(-growth_rate * (x - midpoint)))
+```
 
-1. Assume several plausible saturation scenarios.
-2. Fit logistic growth curves under each scenario.
-3. Estimate the midpoint (inflection point) of each curve.
-4. Evaluate whether the midpoint remains in the future.
+The main parameters are:
 
-If most plausible scenarios indicate that the midpoint has not yet been reached, the technology can reasonably be considered to still be in an early adoption stage.
+- `baseline`: starting level before growth
+- `amplitude`: distance from the baseline to the final level
+- `midpoint`: point where growth is fastest
+- `growth_rate`: steepness of the curve
 
----
+For separated mock data, the notebook fits a separate curve for each segment using nonlinear least squares.
 
-## Methodology
+For very early technology data, the notebook uses a scenario-based approach:
 
-### Step 1: Collect Adoption Data
+1. Choose an assumed final adoption level, such as a market-size estimate or total addressable market scenario.
+2. Fit the early observations while holding that final level fixed.
+3. Check whether the fitted midpoint is still after the latest observation.
+4. Check whether current adoption is still a small share of the assumed final level.
+5. Compare several final-level scenarios to see how sensitive the conclusion is.
 
-Examples:
-
-* Number of users
-* Number of wallets
-* Active nodes
-* Transactions
-* Installed devices
-* Market penetration rate
-
----
-
-### Step 2: Define Plausible Saturation Levels
-
-Because the final market size is unknown, define multiple scenarios:
-
-| Scenario     | Final Adoption Level |
-| ------------ | -------------------- |
-| Conservative | Low saturation       |
-| Moderate     | Medium saturation    |
-| Aggressive   | High saturation      |
-
-Examples:
-
-* 50 million users
-* 100 million users
-* 500 million users
-* 1 billion users
-
----
-
-### Step 3: Fit Logistic Curves
-
-A standard logistic model is
-
-[
-N(t)=\frac{K}{1+Ae^{-rt}}
-]
-
-where:
-
-* (N(t)) = adoption level at time (t)
-* (K) = carrying capacity (saturation level)
-* (r) = growth rate
-* (A) = scaling parameter
-
----
-
-### Step 4: Estimate the Midpoint
-
-The midpoint (inflection point) occurs when:
-
-[
-N(t)=\frac{K}{2}
-]
-
-Interpretation:
-
-* Before midpoint → early-growth phase
-* Near midpoint → transition to mainstream adoption
-* After midpoint → mature diffusion phase
-
----
-
-### Step 5: Perform Scenario Analysis
-
-Since early data cannot reliably estimate (K):
-
-* Fit several logistic curves using different assumed values of (K)
-* Compare estimated inflection points
-* Examine robustness across scenarios
-
-This prevents false confidence in a single saturation estimate.
-
----
-
-## Relationship to Bass Diffusion
-
-The framework is closely related to the Bass Diffusion Model:
-
-[
-f(t)=\left(p+\frac{q}{m}Y(t)\right)\left(m-Y(t)\right)
-]
-
-where:
-
-* (p) = innovation coefficient
-* (q) = imitation coefficient
-* (m) = market potential
-* (Y(t)) = cumulative adopters
-
-Bass models are widely used for:
-
-* Technology forecasting
-* Product adoption
-* Innovation diffusion
-* Market penetration analysis
-
----
+This is useful when the data is too early to estimate the final plateau directly.
 
 ## Important Limitation
 
-Early S-curve data often resembles exponential growth.
+Early S-curve data can look similar to exponential growth, linear growth, or other sigmoid curves over a short window. If the data does not include the middle and upper parts of the S-curve, the final saturation level is weakly identified.
 
-As a result:
+Use the early-phase section as evidence and scenario analysis, not as a definitive forecast.
 
-* Multiple saturation levels can fit historical observations equally well.
-* The final market size may remain highly uncertain.
-* Conclusions should be expressed as scenario-dependent rather than absolute forecasts.
+## How to Run
 
-For this reason, scenario analysis is generally more defensible than attempting to estimate a single "true" carrying capacity.
+Install the required packages in your Jupyter environment:
 
----
+```python
+%pip install numpy pandas matplotlib scipy
+```
 
-## Key Insight
+Then open and run:
 
-The central diagnostic question is:
+```text
+S-curve/scurve.ipynb
+```
 
-> Given several plausible future saturation levels, does the fitted midpoint still lie in the future?
+## References
 
-If the answer is consistently **yes**, then the technology is likely still in the early stages of diffusion.
+These are the main references behind the notebook's approach.
 
----
+1. Rogers, E. M. (2003). *Diffusion of Innovations* (5th ed.). Free Press.  
+   https://www.simonandschuster.com/books/Diffusion-of-Innovations-5th-Edition/Everett-M-Rogers/9780743222099
 
-# Recommended Reading
+2. Bass, F. M. (1969). A New Product Growth for Model Consumer Durables. *Management Science*, 15(5), 215-227.  
+   https://doi.org/10.1287/mnsc.15.5.215
 
-## Diffusion of Innovations
+3. Mahajan, V., Muller, E., & Bass, F. M. (1990). New Product Diffusion Models in Marketing: A Review and Directions for Research. *Journal of Marketing*, 54(1), 1-26.  
+   https://doi.org/10.1177/002224299005400101
 
-### Everett Rogers
+4. Geroski, P. A. (2000). Models of Technology Diffusion. *Research Policy*, 29(4-5), 603-625.  
+   https://doi.org/10.1016/S0048-7333(99)00092-X
 
-**Diffusion of Innovations**
+5. Meade, N., & Islam, T. (2006). Modelling and Forecasting the Diffusion of Innovation: A 25-Year Review. *International Journal of Forecasting*, 22(3), 519-545.  
+   https://doi.org/10.1016/j.ijforecast.2006.01.005
 
-The foundational conceptual framework for understanding:
+6. Verhulst, P. F. (1838). Notice sur la loi que la population poursuit dans son accroissement. *Correspondance Mathematique et Physique*, 10, 113-121.  
+   Background on the logistic growth model.
 
-* Innovators
-* Early adopters
-* Early majority
-* Late majority
-* Laggards
+## Recommended Use
 
-Why technology adoption frequently follows an S-curve.
+When using this notebook with real data, report results as scenarios:
 
-Reference:
+- conservative final adoption level
+- base-case final adoption level
+- optimistic final adoption level
 
-https://en.wikipedia.org/wiki/Diffusion_of_innovations
-
----
-
-## Bass Diffusion Model
-
-### Frank M. Bass (1969)
-
-**A New Product Growth for Model Consumer Durables**
-
-The original paper introducing the Bass Diffusion Model.
-
-DOI:
-
-https://doi.org/10.1287/mnsc.15.5.215
-
----
-
-## Marketing Diffusion Models
-
-### Mahajan, Muller, and Bass (1990)
-
-**New Product Diffusion Models in Marketing: A Review and Directions for Research**
-
-Comprehensive review of diffusion modeling in marketing.
-
-DOI:
-
-https://doi.org/10.1177/002224299005400101
-
----
-
-## Technology Diffusion
-
-### Geroski (2000)
-
-**Models of Technology Diffusion**
-
-Technology-focused overview of diffusion processes.
-
-DOI:
-
-https://doi.org/10.1016/S0048-7333(99)00092-X
-
-Background:
-
-https://en.wikipedia.org/wiki/Technology_diffusion
-
----
-
-## Forecasting Innovation Diffusion
-
-### Meade and Islam (2006)
-
-**Modelling and Forecasting the Diffusion of Innovation**
-
-Comprehensive review of forecasting approaches for innovation diffusion.
-
-DOI:
-
-https://doi.org/10.1016/j.ijforecast.2006.01.005
-
----
-
-## Logistic Growth Background
-
-Useful for understanding:
-
-* Carrying capacity
-* Growth rates
-* Midpoints
-* Why early logistic growth often appears exponential
-
-Reference:
-
-https://en.wikipedia.org/wiki/Logistic_function
-
----
-
-# Citation
-
-If you use this framework in research, reports, or technology adoption studies, please cite the original diffusion literature listed above and clearly state any assumptions used in the saturation-level scenarios.
+If the early-phase conclusion changes sharply across scenarios, the data is probably too early for a strong claim.
